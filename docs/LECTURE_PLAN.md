@@ -1,31 +1,28 @@
 # Suggested lecture plan
 
-## Before class
+## Before class (retarget-only default)
 
-- Install all three Conda environments.
-- Place licensed SMPL-X models and run all `doctor.py` checks.
-- Run the full video-to-reference pipeline once.
-- Verify the one-command smoke checkpoint and recorded rollout.
-- Keep the expected intermediate files; they let students continue if one GPU stage fails.
+- Clone the repository and run `scripts/install_retarget_lab.sh --execute`.
+- Verify `sample_data/input/jump_smplx_joint_targets_30fps.npz`.
+- Run `scripts/run_retarget_lab.sh` once and play the resulting MP4.
+- PromptHMR and licensed SMPL/SMPL-X files are not required in class.
 
 ## 120-minute class
 
-1. 0–15 min: pose, shape, root transform; why a mesh model is useful.
-2. 15–30 min: SMPL versus SMPL-X; inspect the supplied overlay.
-3. 30–45 min: detector, click/rank person selection, SAM2 temporal tracking and occlusion.
-4. 45–60 min: coordinate conversion and inspect the exported SMPL-X arrays.
-5. 60–80 min: GMR IK objective, robot DoF mismatch, joint limits and qpos.
-6. 80–95 min: convert qpos to MjLab reference and inspect FK body states.
-7. 95–110 min: PPO observation/action/reward/termination/DR/RSI.
-8. 110–120 min: play the smoke policy recording and compare reference versus rollout.
+1. 0–15 min: SMPL/SMPL-X concept and why motion reconstruction is precomputed.
+2. 15–30 min: inspect the supplied joint-target NPZ and its coordinate conventions.
+3. 30–55 min: GMR IK objective, robot DoF mismatch, link targets and joint limits.
+4. 55–75 min: run SMPL-X joints → G1 29DoF retargeting.
+5. 75–90 min: inspect qpos, root quaternion, grounding and numerical validity.
+6. 90–105 min: convert qpos to a 50Hz MjLab reference and inspect FK body states.
+7. 105–120 min: play the recorded G1 MP4 and discuss retargeting errors.
 
 ## Assignment
 
-Students bring a 3–8 second video, select one subject, produce a valid 29DoF reference,
-run the smoke profile, and submit:
+Students modify or compare a supplied person joint motion, produce a valid 29DoF reference,
+and submit:
 
-- source video and selection frame/click point (or rank)
-- PromptHMR overlay
+- supplied/modified joint-target NPZ
 - GMR/MjLab validation report
-- training command and W&B/TensorBoard plot
-- a short analysis of the largest reconstruction or retargeting error
+- G1 retarget MP4
+- a short analysis of the largest retargeting error

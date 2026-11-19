@@ -19,7 +19,11 @@ def check(label: str, ok: bool, detail: str) -> bool:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--stage", choices=("files", "prompthmr", "gmr", "mjlab"), default="files")
+    parser.add_argument(
+        "--stage",
+        choices=("files", "retarget", "prompthmr", "gmr", "mjlab"),
+        default="files",
+    )
     args = parser.parse_args()
     ok = True
     required = [
@@ -30,6 +34,26 @@ def main() -> None:
     ]
     for path in required:
         ok &= check(path.name, path.exists(), str(path))
+    if args.stage == "retarget":
+        import numpy as np
+
+        target_file = ROOT / "sample_data/input/jump_smplx_joint_targets_30fps.npz"
+        ok &= check("prepared joint motion", target_file.is_file(), str(target_file))
+        if target_file.is_file():
+            motion = np.load(target_file, allow_pickle=False)
+            fmt = str(np.asarray(motion["format"]).item())
+            positions = motion["joint_positions"]
+            quaternions = motion["joint_quaternions_wxyz"]
+            ok &= check("joint target format", fmt == "gmr_joint_targets_v1", fmt)
+            ok &= check(
+                "joint target shapes",
+                positions.ndim == 3
+                and positions.shape[1:] == (14, 3)
+                and quaternions.shape == (*positions.shape[:2], 4),
+                f"position={positions.shape}, quaternion={quaternions.shape}",
+            )
+        for module in ("torch", "mujoco", "mink", "qpsolvers", "general_motion_retargeting"):
+            ok &= check(module, importlib.util.find_spec(module) is not None, "Python import")
     if args.stage == "prompthmr":
         import torch
 

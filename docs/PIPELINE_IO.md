@@ -2,6 +2,7 @@
 
 | Stage | Input | Output | Critical convention |
 |---|---|---|---|
+| Class input | baked joint-target NPZ | positions `(T,14,3)`, quaternions `(T,14,4)` | quaternion is wxyz; no body model needed |
 | PromptHMR | RGB frames `(H,W,3)` | per-track SMPL-X pose/shape/trans | world is Y-up |
 | Export | `results.pkl`, track id | SMPL-X NPZ | rotate to Z-up |
 | GMR | SMPL-X NPZ | `qpos (T,36)` | root quaternion is wxyz; 29 joints |
@@ -20,6 +21,7 @@
 
 ```text
 PromptHMR selected track count == intended people
+class joint-target format == gmr_joint_targets_v1
 SMPL-X frames == selected track frames
 GMR qpos width == 36
 MjLab joint_pos width == 29

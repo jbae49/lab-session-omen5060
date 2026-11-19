@@ -1,8 +1,8 @@
 # RGB 영상에서 G1 모방 정책까지 — OMEN 16 / RTX 5060 실습
 
-이 저장소는 처음 3D 사람 모델과 로봇 모방학습을 접하는 학부생을 위한 실습이다.
-RGB 영상 한 개에서 원하는 사람을 고르고, 그 사람의 3D 움직임을 복원하고,
-Unitree G1 29DoF 동작으로 바꾼 뒤, 짧은 강화학습까지 직접 실행한다.
+이 저장소는 처음 3D 사람 모델과 로봇 리타깃을 접하는 학부생을 위한 실습이다.
+정식 파이프라인은 RGB 영상에서 사람의 3D 움직임을 복원한 뒤 Unitree G1 29DoF
+동작으로 바꾸지만, **이번 수업에서는 미리 복원된 사람 motion부터 시작한다.**
 
 지원 기준은 다음 한 가지다.
 
@@ -11,9 +11,52 @@ Unitree G1 29DoF 동작으로 바꾼 뒤, 짧은 강화학습까지 직접 실�
 - NVIDIA driver, Conda/Miniconda, 인터넷 연결 필요
 - Windows 네이티브는 지원하지 않는다. WSL2는 가능하지만 렌더링 설정이 더 어렵다.
 
-수업에서는 먼저 제공된 `jump.mov`로 끝까지 성공시킨다. 그 뒤에 새 영상을
-사용한다. 각 단계가 끝나면 바로 다음 명령으로 넘어가지 말고, 생성된 MP4를
-직접 열어 움직임이 맞는지 확인하자!
+## 이번 수업에서 할 것: PromptHMR 설치 없이 리타깃부터
+
+PromptHMR 전체 환경은 Detectron2, SAM2, ViTPose, 여러 checkpoint와 Google Drive
+다운로드가 필요하다. 수업 시간에는 설치 문제에 시간을 쓰지 않도록, 교사가
+PromptHMR/SMPL-X로 미리 복원한 다음 파일을 제공한다.
+
+```text
+sample_data/input/jump_smplx_joint_targets_30fps.npz
+```
+
+이 파일에는 GMR에 필요한 사람 관절 14개의 frame별 위치와 방향만 들어 있다.
+SMPL/SMPL-X body-model 파일이나 PromptHMR checkpoint를 포함하지 않으며, 이
+수업 경로에서는 둘 다 필요하지 않다.
+
+### 수업용 설치
+
+```bash
+sudo apt update
+sudo apt install -y git ffmpeg build-essential libgl1 libegl1
+
+bash scripts/install_retarget_lab.sh --execute
+```
+
+### 수업용 실행 — 한 줄
+
+```bash
+bash scripts/run_retarget_lab.sh
+```
+
+이 명령은 제공된 사람 joint NPZ를 GMR로 G1 29DoF에 리타깃하고, 50Hz MjLab
+reference와 지면이 포함된 MP4를 만든다. 명령이 끝나면 다음 영상을 반드시 직접
+재생해 보자!
+
+```text
+outputs/jump_retarget_lab/jump_retarget_lab_g1_retarget.mp4
+```
+
+정상 결과의 핵심은 `qpos.shape == (T,36)`, 관절 29개, NaN/Inf 없음이다. 영상에서
+로봇의 앞뒤 방향, 무릎, 팔, 발의 지면 관통과 floating을 확인한다.
+
+여기까지가 필수 수업 범위다. 아래 내용은 원래 영상에서 사람 motion을 만드는
+**정식 전체 파이프라인 설명과 선택 확장 실습**이다.
+
+---
+
+## 정식 전체 파이프라인은 어떻게 구성되는가? (선택)
 
 ## 우리가 만들 결과
 
@@ -67,9 +110,10 @@ PyTorch 2.7.1/cu128을 사용하고 Detectron2를 이 GPU용으로 source build�
 권장 여유 공간은 35GB 이상이다. Git 저장소 자체는 작지만 Conda 환경과 neural
 network weight, SMPL/SMPL-X model은 설치 후 별도로 커진다.
 
-## 2. 설치 — 한 줄
+## 2. PromptHMR 포함 전체 환경 설치 — 선택 사항
 
-저장소 최상위 폴더에서 실행한다.
+이 단계는 수업용 리타깃 실습에는 필요 없다. 원본 영상에서 SMPL-X를 직접
+복원해 보고 싶은 경우에만 저장소 최상위 폴더에서 실행한다.
 
 ```bash
 bash scripts/install_omen5060.sh --execute
@@ -94,7 +138,7 @@ git pull
 bash scripts/install_omen5060.sh --execute
 ```
 
-## 3. SMPL과 SMPL-X는 학생이 직접 다운로드
+## 3. 전체 파이프라인용 SMPL과 SMPL-X 다운로드 — 선택 사항
 
 이 두 모델은 라이선스 때문에 GitHub에 넣거나 친구에게 파일을 전달할 수 없다.
 각 학생이 공식 사이트에서 계정을 만들고 동의해야 한다.
