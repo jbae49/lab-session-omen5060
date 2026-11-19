@@ -26,6 +26,7 @@ the source needed by the lab is vendored directly in `repos/`.
 - Detectron2 source revision `247691a1c292654867deb35cabb27f18d75a1363`, built for `sm_120`
 - SAM2 source revision `2b90b9f5ceec907a1c18123530e92e794ad901a4`, optional CUDA postprocessing disabled
 - MJLab `1.2.0`, MuJoCo-Warp `3.5.0`
+- MuJoCo `3.5.0`, Warp-Lang `1.12.0` (matching the MJLab v1.2.0 lock)
 - PromptHMR input height 640, segmentation batch 2, image-model batch 1
 - PPO profiles: 32-env smoke, 128-env quick, 256-env full
 

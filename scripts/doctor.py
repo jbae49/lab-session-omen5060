@@ -102,6 +102,7 @@ def main() -> None:
         for module in ("torch", "mujoco", "scipy", "mjlab", "rsl_rl"):
             ok &= check(module, importlib.util.find_spec(module) is not None, "Python import")
         import mujoco
+        import warp
 
         version = tuple(map(int, mujoco.__version__.split(".")[:2]))
         ok &= check("MuJoCo >= 3.5", version >= (3, 5), mujoco.__version__)
@@ -110,6 +111,17 @@ def main() -> None:
             hasattr(mujoco.mjtEnableBit, "mjENBL_MULTICCD"),
             "mujoco.mjtEnableBit.mjENBL_MULTICCD",
         )
+        ok &= check(
+            "Warp version",
+            warp.__version__ == "1.12.0",
+            f"{warp.__version__} (required: 1.12.0)",
+        )
+        try:
+            from mujoco_warp._src import sensor  # noqa: F401
+        except Exception as exc:  # pragma: no cover - diagnostic path
+            ok &= check("MuJoCo-Warp sensor kernels", False, repr(exc))
+        else:
+            ok &= check("MuJoCo-Warp sensor kernels", True, "import and parse")
         if subprocess.run(["nvidia-smi"], stdout=subprocess.DEVNULL).returncode == 0:
             check("NVIDIA driver", True, "nvidia-smi works")
     raise SystemExit(0 if ok else 1)

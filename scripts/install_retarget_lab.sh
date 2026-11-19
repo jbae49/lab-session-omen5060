@@ -37,7 +37,7 @@ echo "[2/2] MJLab reference/visualization 환경"
 ensure_env unitree_mjlab_omen5060
 conda run -n unitree_mjlab_omen5060 python -m pip install \
   -e "$LAB_ROOT/repos/unitree_rl_mjlab" \
-  scipy "mujoco==3.5.0" "mujoco-warp==3.5.0"
+  scipy "warp-lang==1.12.0" "mujoco==3.5.0" "mujoco-warp==3.5.0"
 conda run -n unitree_mjlab_omen5060 python -m pip install tensorboard wandb
 
 echo

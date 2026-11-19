@@ -563,6 +563,17 @@ bash scripts/update_retarget_lab.sh
 bash scripts/run_retarget_lab.sh
 ```
 
+`Error while parsing function "_sensor_pos"`와 `WarpCodegenKeyError: referencing
+undefined symbol`은 리타깃이나 녹화 파일 문제가 아니다. MjLab 1.2.0의 느슨한
+의존성 범위 때문에 최신 `warp-lang`이 설치된 경우다. 공식 v1.2.0 lock과 같은
+`warp-lang==1.12.0`을 `update_retarget_lab.sh`가 자동 적용한다.
+
+```bash
+git pull
+bash scripts/update_retarget_lab.sh
+bash scripts/run_retarget_lab.sh
+```
+
 `CUDA out of memory`이면 브라우저/게임/다른 Python GPU process를 닫고 PromptHMR
 batch 1, 학습 env 128로 다시 시도한다. 노트북을 재부팅한 직후 실행하는 것도 좋다.
 

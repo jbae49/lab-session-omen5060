@@ -64,7 +64,7 @@ conda run -n mjlab_postclass_omen5060 python -m pip install \
   torch==2.7.1 torchvision==0.22.1 --index-url https://download.pytorch.org/whl/cu128
 conda run -n mjlab_postclass_omen5060 python -m pip install \
   -e "$LAB_ROOT/repos/unitree_rl_mjlab" scipy tensorboard wandb \
-  "mujoco==3.5.0" "mujoco-warp==3.5.0"
+  "warp-lang==1.12.0" "mujoco==3.5.0" "mujoco-warp==3.5.0"
 
 echo "[5/5] PromptHMR 공개 checkpoint"
 bash "$LAB_ROOT/postclass_full_pipeline/fetch_weights.sh"

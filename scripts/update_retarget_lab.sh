@@ -16,7 +16,7 @@ fi
 
 echo "수업용 MjLab 환경의 호환 패키지만 업데이트합니다."
 conda run --no-capture-output -n "$ENV_NAME" python -m pip install --upgrade \
-  scipy "mujoco==3.5.0" "mujoco-warp==3.5.0"
+  scipy "warp-lang==1.12.0" "mujoco==3.5.0" "mujoco-warp==3.5.0"
 
 echo "설치 결과를 검사합니다."
 conda run --no-capture-output -n "$ENV_NAME" \
