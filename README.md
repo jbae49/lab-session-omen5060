@@ -70,6 +70,58 @@ outputs/jump_retarget_lab/jump_retarget_lab_g1_retarget.mp4
 정상 결과의 핵심은 `qpos.shape == (T,36)`, 관절 29개, NaN/Inf 없음이다. 영상에서
 로봇의 앞뒤 방향, 무릎, 팔, 발의 지면 관통과 floating을 확인한다.
 
+### 수업이 끝난 뒤에도 학습시켜 두기
+
+리타깃 영상이 정상인 팀은 수업 중 짧은 smoke test로 학습 연결을 확인한다.
+
+```bash
+# 32개 환경, 20 iteration: 설치와 데이터 연결만 확인
+bash scripts/train_mimic.sh smoke
+```
+
+오류 없이 checkpoint가 생겼다면 60,000 iteration 장기 학습을 백그라운드로
+시작한다. **이 명령은 수업 시간 안에 끝내기 위한 것이 아니다.** 오늘 시작해 두고
+다음 날 결과를 확인하는 실험이다.
+
+```bash
+# 기본: GPU 0, 256개 환경, TensorBoard 기록, 60,000 iteration
+bash scripts/start_training.sh full
+```
+
+`nohup`을 사용하므로 터미널을 닫아도 학습은 계속된다. 스크립트는 가능한 경우
+Linux sleep도 막지만, **노트북 덮개를 닫거나 전원을 끄거나 재부팅하면 학습은
+중단된다.** 전원 어댑터를 연결하고, OMEN Performance mode를 켜고, 뚜껑을 연 채
+통풍이 되는 곳에 둔다. 외부 모니터만 쓸 경우 Ubuntu 전원 설정에서 덮개 닫기
+동작을 먼저 확인한다.
+
+진행 상황은 다른 터미널에서 언제든 확인할 수 있다.
+
+```bash
+bash scripts/training_status.sh
+```
+
+다음 날에는 위 명령으로 최신 checkpoint 경로를 확인한 뒤, 최신 정책을 한 clip
+rollout하고 지면이 포함된 MP4를 만든다.
+
+```bash
+bash scripts/record_latest_policy.sh
+```
+
+마지막에 출력되는 `outputs/policy_rollouts/.../policy_rollout.mp4`를 직접 재생해
+reference 영상과 비교해 보자. 생성된 checkpoint·rollout은 Git에 올라가지 않으며
+각 팀 컴퓨터의 `repos/unitree_rl_mjlab/logs/`와 `outputs/`에만 남는다.
+
+기본 TensorBoard 로그를 그래프로 보고 싶다면 학습 중이나 다음 날 실행한다.
+
+```bash
+conda run -n unitree_mjlab_omen5060 tensorboard \
+  --logdir repos/unitree_rl_mjlab/logs/rsl_rl/g1_tracking --port 6006
+```
+
+브라우저에서 `http://localhost:6006`을 연다. W&B 계정이 있는 팀은 먼저
+`conda run -n unitree_mjlab_omen5060 wandb login`을 한 뒤
+`LOGGER=wandb bash scripts/start_training.sh full`을 사용할 수 있지만 필수는 아니다.
+
 여기까지가 필수 수업 범위다. 아래 내용은 원래 영상에서 사람 motion을 만드는
 **정식 전체 파이프라인 설명과 선택 확장 실습**이다.
 
@@ -382,8 +434,8 @@ bash scripts/train_mimic.sh smoke outputs/jump/mjlab/jump_g1_29dof_50hz.npz
 LOGGER=wandb bash scripts/train_mimic.sh quick \
   outputs/jump/mjlab/jump_g1_29dof_50hz.npz
 
-# 장기 학습 시작값: 256 env, 60,000 iteration
-LOGGER=wandb bash scripts/train_mimic.sh full \
+# 장기 학습: 백그라운드에서 시작하고 다음 날 확인
+bash scripts/start_training.sh full \
   outputs/jump/mjlab/jump_g1_29dof_50hz.npz
 ```
 

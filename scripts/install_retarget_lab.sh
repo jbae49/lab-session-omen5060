@@ -37,6 +37,7 @@ echo "[2/2] MJLab reference/visualization 환경"
 ensure_env unitree_mjlab_omen5060
 conda run -n unitree_mjlab_omen5060 python -m pip install \
   -e "$LAB_ROOT/repos/unitree_rl_mjlab"
+conda run -n unitree_mjlab_omen5060 python -m pip install tensorboard wandb
 
 echo
 echo "설치 완료. 다음 명령으로 수업 실습을 실행하세요:"
