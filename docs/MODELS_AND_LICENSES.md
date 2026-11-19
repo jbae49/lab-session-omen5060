@@ -68,6 +68,14 @@ terminal에서는 비밀번호를 입력하지 않는다.
 두 번째 script는 다운로드된 SMPL-X NPZ 세 개를 GMR 폴더로 실제 복사한다.
 symbolic link를 만들지 않으므로 PromptHMR 폴더를 이동해도 GMR 파일이 깨지지 않는다.
 
+브라우저로 archive를 이미 받았다면 ZIP 자체를 `repos/`에 넣지 않는다. 압축 안의
+`SMPLX_{NEUTRAL,MALE,FEMALE}.npz`는
+`repos/PromptHMR/data/body_models/smplx/`에, SMPL PKL 세 개는 이름을
+`SMPL_{NEUTRAL,MALE,FEMALE}.pkl`로 정리해
+`repos/PromptHMR/data/body_models/smpl/`에 둔다. 정확한 압축 해제 명령과 보조
+변환 파일 다운로드 명령은 최상위 `README.md`의 “브라우저로 ZIP을 이미 받은 경우”를
+그대로 따른다.
+
 ## 4. 최종 디렉터리 구조
 
 ```text

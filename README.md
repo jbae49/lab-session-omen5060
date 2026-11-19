@@ -95,7 +95,7 @@ bash scripts/install_omen5060.sh --execute
    **SMPL-X v1.1 model archive** (`models_smplx_v1_1.zip`)를 선택한다.
 2. [SMPL 공식 다운로드](https://smpl.is.tue.mpg.de/download.php)에서
    **SMPL for Python v1.1.0** (`SMPL_python_v.1.1.0.zip`)을 선택한다.
-3. 아래 공식 준비 스크립트를 실행하고 본인의 계정 정보를 입력한다.
+3. 아직 ZIP을 받지 않았다면 아래 권장 방법을 실행하고 본인의 계정 정보를 입력한다.
 
 ```bash
 cd repos/PromptHMR
@@ -103,6 +103,55 @@ bash scripts/fetch_smplx.sh
 cd ../..
 bash scripts/copy_body_models_to_gmr.sh
 ```
+
+### 브라우저로 ZIP을 이미 받은 경우: 정확히 어디에 넣나?
+
+ZIP 파일 자체를 저장소 안에 넣는 것이 아니다. 압축 안의 모델 파일을 아래 최종
+경로로 복사한다.
+
+```text
+SMPL-X ZIP의 SMPLX_NEUTRAL.npz → repos/PromptHMR/data/body_models/smplx/SMPLX_NEUTRAL.npz
+SMPL-X ZIP의 SMPLX_MALE.npz    → repos/PromptHMR/data/body_models/smplx/SMPLX_MALE.npz
+SMPL-X ZIP의 SMPLX_FEMALE.npz  → repos/PromptHMR/data/body_models/smplx/SMPLX_FEMALE.npz
+
+SMPL ZIP의 neutral PKL → repos/PromptHMR/data/body_models/smpl/SMPL_NEUTRAL.pkl
+SMPL ZIP의 male PKL    → repos/PromptHMR/data/body_models/smpl/SMPL_MALE.pkl
+SMPL ZIP의 female PKL  → repos/PromptHMR/data/body_models/smpl/SMPL_FEMALE.pkl
+```
+
+Linux 명령으로 한 번에 풀고 복사하려면 `/path/to/...zip` 두 곳을 실제 다운로드
+경로로 바꿔 실행한다.
+
+```bash
+BODY_MODEL_TMP="$(mktemp -d)"
+unzip /path/to/models_smplx_v1_1.zip -d "$BODY_MODEL_TMP/smplx"
+unzip /path/to/SMPL_python_v.1.1.0.zip -d "$BODY_MODEL_TMP/smpl"
+
+mkdir -p repos/PromptHMR/data/body_models/{smplx,smpl}
+cp "$BODY_MODEL_TMP"/smplx/models/smplx/SMPLX_{NEUTRAL,MALE,FEMALE}.npz \
+  repos/PromptHMR/data/body_models/smplx/
+cp "$BODY_MODEL_TMP"/smpl/SMPL_python_v.1.1.0/smpl/models/basicmodel_neutral_lbs_10_207_0_v1.1.0.pkl \
+  repos/PromptHMR/data/body_models/smpl/SMPL_NEUTRAL.pkl
+cp "$BODY_MODEL_TMP"/smpl/SMPL_python_v.1.1.0/smpl/models/basicmodel_m_lbs_10_207_0_v1.1.0.pkl \
+  repos/PromptHMR/data/body_models/smpl/SMPL_MALE.pkl
+cp "$BODY_MODEL_TMP"/smpl/SMPL_python_v.1.1.0/smpl/models/basicmodel_f_lbs_10_207_0_v1.1.0.pkl \
+  repos/PromptHMR/data/body_models/smpl/SMPL_FEMALE.pkl
+```
+
+수동 압축 해제 후에도 PromptHMR 보조 변환 파일을 받아야 한다.
+
+```bash
+cd repos/PromptHMR
+conda run -n phmr_omen5060 gdown --folder -O ./data/ \
+  'https://drive.google.com/drive/folders/1JU7CuU2rKkwD7WWjvSZJKpQFFk_Z6NL7'
+conda run -n phmr_omen5060 gdown -O ./data/body_models/smplx/ \
+  1v9Qy7ZXWcTM8_a9K2nSLyyVrJMFYcUOk
+cd ../..
+bash scripts/copy_body_models_to_gmr.sh
+```
+
+마지막 명령이 SMPL-X 세 파일을 `repos/GMR/assets/body_models/smplx/`에도 실제
+파일로 복사한다. ZIP은 다운로드 폴더에 그대로 두거나 삭제해도 실행에는 영향이 없다.
 
 PromptHMR은 SMPL-X pose를 만들기 때문에 SMPL-X가 핵심이다. SMPL도 scene export와
 SMPL-X/SMPL 변환 보조 데이터에 사용되므로 둘 다 준비한다. 이 저장소는 symbolic
