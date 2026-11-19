@@ -99,8 +99,17 @@ def main() -> None:
                 f"{path} (must be a real file)",
             )
     if args.stage == "mjlab":
-        for module in ("torch", "mujoco", "mjlab", "rsl_rl"):
+        for module in ("torch", "mujoco", "scipy", "mjlab", "rsl_rl"):
             ok &= check(module, importlib.util.find_spec(module) is not None, "Python import")
+        import mujoco
+
+        version = tuple(map(int, mujoco.__version__.split(".")[:2]))
+        ok &= check("MuJoCo >= 3.5", version >= (3, 5), mujoco.__version__)
+        ok &= check(
+            "MuJoCo MULTICCD enum",
+            hasattr(mujoco.mjtEnableBit, "mjENBL_MULTICCD"),
+            "mujoco.mjtEnableBit.mjENBL_MULTICCD",
+        )
         if subprocess.run(["nvidia-smi"], stdout=subprocess.DEVNULL).returncode == 0:
             check("NVIDIA driver", True, "nvidia-smi works")
     raise SystemExit(0 if ok else 1)

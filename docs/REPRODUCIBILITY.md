@@ -29,6 +29,11 @@ the source needed by the lab is vendored directly in `repos/`.
 - PromptHMR input height 640, segmentation batch 2, image-model batch 1
 - PPO profiles: 32-env smoke, 128-env quick, 256-env full
 
+The optional after-class workflow uses the same pinned package versions but separate Conda
+environments (`phmr_postclass_omen5060`, `gmr_postclass_omen5060`, and
+`mjlab_postclass_omen5060`) and a separate RL experiment root (`postclass_g1_tracking`).
+It does not mutate or activate the classroom environments.
+
 The top-level teaching repository is the versioned unit. Do not run Git commands inside
 the three vendored source directories.
 

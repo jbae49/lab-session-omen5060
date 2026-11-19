@@ -125,9 +125,17 @@ conda run -n unitree_mjlab_omen5060 tensorboard \
 여기까지가 필수 수업 범위다. 아래 내용은 원래 영상에서 사람 motion을 만드는
 **정식 전체 파이프라인 설명과 선택 확장 실습**이다.
 
+> 수업 후 자기 영상을 처음부터 처리하려는 학생은 수업용 환경을 바꾸지 말고
+> [`postclass_full_pipeline/README.md`](postclass_full_pipeline/README.md)의 별도
+> 환경을 사용한다. 세 Conda 환경 이름과 실행 스크립트가 수업용 경로와 분리되어 있다.
+
 ---
 
 ## 정식 전체 파이프라인은 어떻게 구성되는가? (선택)
+
+이하 내용은 파이프라인의 원리와 단계별 명령을 이해하기 위한 참고 자료다. 새로
+설치하는 학생은 환경 이름이 섞이지 않도록 위에 연결한 `postclass_full_pipeline/`의
+설치·실행 명령을 우선 사용한다.
 
 ## 우리가 만들 결과
 
@@ -521,6 +529,28 @@ bash scripts/install_omen5060.sh --execute
 ```bash
 conda run -n phmr_omen5060 python -m pip install --no-build-isolation \
   'git+https://github.com/Arthur151/chumpy.git@ec5a20f3adc1a105c7a907cfed9a33d7dccbe95f'
+```
+
+`run_retarget_lab.sh`의 50Hz 변환 단계에서 `No module named 'scipy'`가 나오면 이전
+버전 설치 스크립트로 만든 MjLab 환경이다. 저장소를 업데이트하고 SciPy만 추가하면
+환경을 다시 만들 필요가 없다.
+
+```bash
+git pull
+conda run -n unitree_mjlab_omen5060 python -m pip install scipy
+bash scripts/run_retarget_lab.sh
+```
+
+`mujoco.mjtEnableBit has no attribute mjENBL_MULTICCD`는 결과 파일 문제가 아니라
+MjLab 1.2.0과 오래된 MuJoCo의 버전 충돌이다. 환경을 삭제하지 말고 MuJoCo만 3.5로
+맞춘다.
+
+```bash
+conda run -n unitree_mjlab_omen5060 python -m pip install --upgrade \
+  "mujoco==3.5.0" "mujoco-warp==3.5.0"
+conda run -n unitree_mjlab_omen5060 python -c \
+  "import mujoco; print(mujoco.__version__)"
+bash scripts/run_retarget_lab.sh
 ```
 
 `CUDA out of memory`이면 브라우저/게임/다른 Python GPU process를 닫고 PromptHMR
