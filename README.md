@@ -86,6 +86,14 @@ bash scripts/install_omen5060.sh --execute
 설치는 인터넷 속도와 source build에 따라 오래 걸릴 수 있다. 오류가 나면 마지막
 20줄만 지우지 말고 전체 오류를 저장해 조교에게 전달한다.
 
+설치 도중 오류가 나도 Conda 환경을 삭제할 필요가 없다. 먼저 저장소를 업데이트한
+뒤 같은 설치 명령을 다시 실행하면 기존 환경과 이미 받은 핵심 weight를 재사용한다.
+
+```bash
+git pull
+bash scripts/install_omen5060.sh --execute
+```
+
 ## 3. SMPL과 SMPL-X는 학생이 직접 다운로드
 
 이 두 모델은 라이선스 때문에 GitHub에 넣거나 친구에게 파일을 전달할 수 없다.
@@ -383,6 +391,22 @@ Git에는 실행에 필요한 source, G1 mesh, 작은 샘플, 검증용 checkpoi
 
 `CUDA error: no kernel image ... sm_120`이 보이면 잘못된 예전 PyTorch/cu126 환경을
 사용한 것이다. 환경 이름이 `phmr_omen5060`인지 확인한다.
+
+`Getting requirements to build wheel ... No module named 'pip'`가 보이면 오래된
+`chumpy`를 pip의 격리 build 환경에서 만들려 한 경우다. 최신 저장소의 설치
+스크립트는 `chumpy`에 `--no-build-isolation`을 적용한다. 다음처럼 이어서 실행한다.
+
+```bash
+git pull
+bash scripts/install_omen5060.sh --execute
+```
+
+직접 해당 단계만 복구해야 한다면 다음 명령을 사용할 수 있다.
+
+```bash
+conda run -n phmr_omen5060 python -m pip install --no-build-isolation \
+  'git+https://github.com/Arthur151/chumpy.git@ec5a20f3adc1a105c7a907cfed9a33d7dccbe95f'
+```
 
 `CUDA out of memory`이면 브라우저/게임/다른 Python GPU process를 닫고 PromptHMR
 batch 1, 학습 env 128로 다시 시도한다. 노트북을 재부팅한 직후 실행하는 것도 좋다.
