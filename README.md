@@ -59,6 +59,18 @@ bash scripts/install_retarget_lab.sh --execute
 bash scripts/run_retarget_lab.sh
 ```
 
+이미 설치를 마친 컴퓨터에서 저장소만 업데이트했다면 전체 환경을 다시 설치하지
+않는다. 다음 두 명령으로 호환 패키지를 자동으로 맞춘 뒤 실행한다.
+
+```bash
+git pull
+bash scripts/update_retarget_lab.sh
+bash scripts/run_retarget_lab.sh
+```
+
+`update_retarget_lab.sh`는 기존 Conda 환경을 삭제하지 않고 SciPy, MuJoCo,
+MuJoCo-Warp만 호환 버전으로 확인·업데이트한다.
+
 이 명령은 제공된 사람 joint NPZ를 GMR로 G1 29DoF에 리타깃하고, 50Hz MjLab
 reference와 지면이 포함된 MP4를 만든다. 명령이 끝나면 다음 영상을 반드시 직접
 재생해 보자!
@@ -537,7 +549,7 @@ conda run -n phmr_omen5060 python -m pip install --no-build-isolation \
 
 ```bash
 git pull
-conda run -n unitree_mjlab_omen5060 python -m pip install scipy
+bash scripts/update_retarget_lab.sh
 bash scripts/run_retarget_lab.sh
 ```
 
@@ -546,10 +558,8 @@ MjLab 1.2.0과 오래된 MuJoCo의 버전 충돌이다. 환경을 삭제하지 �
 맞춘다.
 
 ```bash
-conda run -n unitree_mjlab_omen5060 python -m pip install --upgrade \
-  "mujoco==3.5.0" "mujoco-warp==3.5.0"
-conda run -n unitree_mjlab_omen5060 python -c \
-  "import mujoco; print(mujoco.__version__)"
+git pull
+bash scripts/update_retarget_lab.sh
 bash scripts/run_retarget_lab.sh
 ```
 
