@@ -197,7 +197,9 @@ outputs/postclass_policy_rollouts/                        정책 rollout와 MP4
 
 PromptHMR 출력은 SMPL-X다. GMR은 이를 사람과 구조가 다른 G1의 관절로 맞추며,
 학습 actor의 출력 차원은 29다. 29DoF reference/checkpoint는 23DoF 로봇에 그대로
-사용할 수 없다.
+사용할 수 없다. 정책의 정확한 observation, reward weight/std, termination과 domain
+randomization은 상위 [`README의 정책 입력과 출력`](../README.md#7-정책의-입력과-출력)을
+읽는다.
 
 ## 9. 더 자세한 설명
 

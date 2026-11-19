@@ -495,19 +495,114 @@ START_FRAME=120 TARGET_X=720 TARGET_Y=350 \
 
 ## 7. 정책의 입력과 출력
 
-29DoF No-State-Estimation actor(`ClassLab-G1-Tracking-No-State-Estimation`)는 reference joint command, 현재 robot IMU angular
-velocity, 현재 joint position/velocity, 이전 action, reference torso orientation을
-사용한다. action은 29개 목표 joint-position offset이다. 학습 중 critic은 더 많은
-privileged simulation state를 볼 수 있지만, actor는 외부 motion-capture camera를
-센서로 사용하지 않는다.
+학습 명령이 사용하는 task는 정확히 다음과 같다.
 
-`motion_anchor_ori_b`는 camera yaw가 아니다. 현재 robot base frame에서 표현한
-reference anchor orientation이다. reference 좌표계, quaternion 순서, 초기 base
-orientation이 잘못되면 이 값이 튀고 정책도 불안정해질 수 있다.
+```text
+ClassLab-G1-Tracking-No-State-Estimation
+```
 
-기본 reward에는 root/body position·orientation·linear/angular velocity tracking과
-joint/action penalty가 있다. reference가 실제 로봇의 관절 범위와 접촉 물리에 맞는지
-먼저 확인해야 reward 조정이 의미가 있다.
+여기서 anchor는 `pelvis`가 아니라 **`torso_link`**다. reference와 simulation에서
+추적하는 body는 pelvis, 양쪽 hip/knee/ankle, torso, 양쪽 shoulder/elbow/wrist의
+14개다. 제어 주기는 50Hz이고 물리 simulation은 200Hz다(`timestep=0.005`,
+`decimation=4`).
+
+### Actor observation: 실제 정책이 보는 값
+
+| observation | 차원 | 의미 |
+|---|---:|---|
+| `command` | 58 | 현재 reference의 G1 관절 위치 29 + 관절 속도 29 |
+| `motion_anchor_ori_b` | 6 | 현재 robot torso 좌표계에서 본 reference torso 상대 방향의 6D rotation 표현 |
+| `base_ang_vel` | 3 | robot IMU 각속도 |
+| `joint_pos` | 29 | default joint pose 기준 현재 관절 위치 |
+| `joint_vel` | 29 | 현재 관절 속도 |
+| `actions` | 29 | 직전 policy action |
+| **합계** | **154** | actor network 입력 한 frame |
+
+No-State-Estimation actor에서는 `motion_anchor_pos_b`와 `base_lin_vel`을 제거한다.
+즉 actor는 robot의 global XYZ 위치나 global 위치를 알려 주는 외부 motion-capture
+camera를 입력으로 받지 않는다. 학습 중 observation에는 센서 노이즈가 추가된다.
+
+- torso 방향 6D: ±0.05
+- IMU 각속도: ±0.2 rad/s
+- joint position: ±0.01 rad
+- joint velocity: ±0.5 rad/s
+
+`motion_anchor_ori_b`는 camera yaw나 Euler angle이 아니다. 현재 simulation robot의
+torso orientation에서 reference torso orientation까지의 상대 rotation을 구한 뒤
+rotation matrix의 첫 두 column을 펴서 만든 6D 값이다. reference 좌표계나 초기
+orientation이 잘못되면 이 값도 잘못된다.
+
+### Critic observation: 학습할 때만 보는 privileged 정보
+
+Critic은 actor observation에 더해 torso의 상대 위치, 14개 body의 위치·방향,
+base 선속도 등 완전한 simulation state를 사용한다. 현재 설정에서 286차원이며 PPO의 value를
+학습할 때만 사용된다. 배포되는 actor가 이 privileged state를 요구하는 것은 아니다.
+
+### Action
+
+Policy 출력은 29개 G1 관절의 position target offset이다. 각 action은 robot default
+pose에 더해지며, 관절마다 effort와 stiffness를 고려해 계산된 `G1_ACTION_SCALE`이
+적용된다. 따라서 action `1.0`이 모든 관절에서 똑같은 radian을 의미하지 않는다.
+
+### Reward
+
+Tracking reward는 기본적으로 다음 형태다.
+
+```text
+reward = exp(-mean_squared_error / std²) × weight
+```
+
+오차가 0이면 해당 positive reward는 weight에 가까워지고, `std`가 작을수록 같은
+오차에도 보상이 더 빠르게 감소한다.
+
+| reward term | weight | std | 무엇을 맞추는가 |
+|---|---:|---:|---|
+| `motion_global_root_pos` | 0.5 | 0.30m | reference torso와 robot torso의 world position |
+| `motion_global_root_ori` | 0.5 | 0.40rad | reference torso와 robot torso의 world orientation |
+| `motion_body_pos` | 1.0 | 0.30m | torso 기준 14개 body 상대 위치 |
+| `motion_body_ori` | 1.0 | 0.40rad | torso 기준 14개 body 상대 방향 |
+| `motion_body_lin_vel` | 1.0 | 1.0m/s | 14개 body world 선속도 |
+| `motion_body_ang_vel` | 1.0 | 3.14rad/s | 14개 body world 각속도 |
+| `action_rate_l2` | -0.1 | – | action이 frame마다 급격히 바뀌는 것을 억제 |
+| `joint_limit` | -10.0 | – | soft joint limit 위반 억제 |
+| `self_collisions` | -10.0 | – | 10N을 넘는 self-collision 억제 |
+
+이 기본 수업 task에는 별도의 ankle/toe jump reward나 torso-height reward가 없다.
+또한 reference joint angle을 직접 비교하는 joint-position reward도 없다. reference에
+포함된 자세·body 위치·방향·속도를 위의 body tracking reward로 배우는 구성이다.
+
+### Termination: episode를 즉시 끝내는 조건
+
+| termination | 조건 |
+|---|---|
+| `time_out` | episode가 10초에 도달 |
+| `anchor_pos` | reference와 robot torso의 **높이 Z 오차**가 0.25m 초과 |
+| `anchor_ori` | 두 torso의 projected-gravity Z 성분 차이가 0.8 초과 |
+| `ee_body_pos` | 양쪽 ankle 또는 wrist 중 하나라도 reference 대비 **높이 Z 오차**가 0.25m 초과 |
+
+`anchor_pos`와 `ee_body_pos`는 XY 거리 전체가 아니라 Z 높이 오차만 검사한다.
+관절 limit과 self-collision은 termination이 아니라 위 표의 penalty다. 실패한 episode는
+adaptive RSI가 기록하여 이후 그 어려운 motion 구간을 더 자주 시작점으로 선택한다.
+
+### 학습 중 Domain Randomization과 perturbation
+
+| 항목 | 현재 범위 |
+|---|---|
+| 외부 push | 1–3초마다 torso velocity를 `x/y ±0.5m/s`, `z ±0.2m/s`, `roll/pitch ±0.52rad/s`, `yaw ±0.78rad/s` |
+| torso center of mass | X/Y/Z 각 축 ±0.05m |
+| joint encoder bias | ±0.01rad |
+| 양발 friction | 0.3–1.2, 한 robot의 foot geom에는 같은 값 적용 |
+| reset root position | X/Y ±0.05m, Z ±0.01m |
+| reset root orientation | roll/pitch ±0.10rad, yaw ±0.20rad |
+| reset root velocity | push와 같은 선속도·각속도 범위 |
+| reset joint position | reference joint angle에 ±0.10rad |
+| adaptive RSI | 실패가 많이 난 reference 구간을 다음 reset 시작점으로 더 자주 sampling |
+
+따라서 smoke test와 장기 학습은 단순히 kinematic reference를 재생하는 것이 아니라,
+외란과 물성 변화가 있는 simulation에서 reference를 다시 따라가도록 PPO를 학습한다.
+실제 설정의 근거 코드는
+[`tracking_env_cfg.py`](repos/unitree_rl_mjlab/src/tasks/tracking/tracking_env_cfg.py)와
+[`g1/env_cfgs.py`](repos/unitree_rl_mjlab/src/tasks/tracking/config/g1/env_cfgs.py)에 있다.
 
 ## 8. 저장소가 가벼운 이유
 
