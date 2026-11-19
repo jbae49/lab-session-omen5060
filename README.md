@@ -25,6 +25,25 @@ sample_data/input/jump_smplx_joint_targets_30fps.npz
 SMPL/SMPL-X body-model 파일이나 PromptHMR checkpoint를 포함하지 않으며, 이
 수업 경로에서는 둘 다 필요하지 않다.
 
+### 저장소에서 제공하는 사람 원본 자료
+
+```text
+sample_data/input/jump.mov
+    원본 RGB 영상
+
+sample_data/expected/jump_prompthmr_overlay.mp4
+    원본 영상 위에 SMPL-X mesh를 겹쳐 녹화한 확인 영상
+
+sample_data/expected/jump_smplx_gmr_input.npz
+    PromptHMR에서 복원한 raw SMPL-X pose/betas/root motion
+
+sample_data/input/jump_smplx_joint_targets_30fps.npz
+    위 SMPL-X motion을 body model 없이 GMR에 넣을 수 있도록 만든 사람 joint motion
+```
+
+**G1 qpos, G1 50Hz reference, G1 녹화 영상은 정답으로 제공하지 않는다.** 학생이
+직접 GMR을 실행해 `outputs/jump_retarget_lab/` 아래에 생성해야 한다.
+
 ### 수업용 설치
 
 ```bash

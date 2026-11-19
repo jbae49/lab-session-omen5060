@@ -3,9 +3,15 @@ set -euo pipefail
 
 LAB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROFILE="${1:-quick}"
-MOTION="${2:-$LAB_ROOT/sample_data/expected/jump_g1_29dof_gmr_mjlab_50hz.npz}"
+MOTION="${2:-$LAB_ROOT/outputs/jump_retarget_lab/jump_retarget_lab_g1_29dof_50hz.npz}"
 GPU="${GPU:-0}"
 LOGGER="${LOGGER:-tensorboard}"
+
+if [[ ! -f "$MOTION" ]]; then
+  echo "Reference motion이 없습니다: $MOTION" >&2
+  echo "먼저 실행하세요: bash scripts/run_retarget_lab.sh" >&2
+  exit 1
+fi
 
 case "$PROFILE" in
   smoke) ENVS=32; ITERS=20 ;;
