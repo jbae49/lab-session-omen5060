@@ -1,0 +1,34 @@
+# Python caches
+*.py[cod]
+__pycache__/
+*.egg-info/
+
+# IDE / editor
+.idea/
+.ipynb_checkpoints/
+.vscode/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Training / runtime outputs
+outputs/
+logs/
+wandb/
+MUJOCO_LOG.TXT
+
+# Build artifacts
+deploy/robots/go2/build
+deploy/robots/g1/build
+deploy/robots/h1_2/build
+deploy/robots/g1_23dof/build
+deploy/robots/r1/build
+deploy/robots/a2/build
+simulate/build
+
+# Existing large sample already excluded upstream
+src/assets/motions/g1/dance1_subject2.npz

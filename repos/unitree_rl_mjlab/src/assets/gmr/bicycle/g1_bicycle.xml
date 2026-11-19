@@ -1,0 +1,248 @@
+<!--
+  g1_bicycle.xml  v4 - MEASURED geometry from the real bike.
+
+  MEASURED (tape/protractor on the real bike):
+    wheel radius     r   = 0.24 m   (loaded)
+    wheelbase        L   = 0.88 m  (hub-to-hub, matches BicycleDims)
+    steer axis tilt  eps = 20 deg from vertical
+    fork offset      f   = 0.010 m
+    trail            c   = 0.070 m (measured) / 0.0767 m (derived from r,eps,f)
+    total mass           = 11.8 kg
+  Cross-check: (r sin eps - f)/cos eps = 7.67 cm vs 7.0 cm measured -> consistent
+  within tire-compression / straightedge error. Model uses the DERIVED trail so
+  that r, eps, f, c remain mutually consistent.
+
+  Derived:
+    steer axis dir   u = (-0.34202, 0, 0.93969)
+    axis ground pt   x = L + c = 0.9567;   x(z) = 0.9567 - 0.36397 z
+    fork body origin = (0.7383, 0, 0.60)   [on the axis]
+    front axle local = (0.1417, 0, -0.36)  [verified: 10.00 mm off the axis]
+
+  Wheels: invisible collision ellipsoid (crown radius 25 mm, single-point contact)
+    + visual-only cylinder at the true 5 cm width. Hoop inertia I_spin = m r^2 = 0.115.
+  Fork: steerer collinear with the steer axis; stem offsets the bar 3.9 cm forward
+    (does NOT change trail; does raise fork inertia about the steer axis).
+  Interaction collision geoms (group 3): frame tubes, fork, crank/drivetrain,
+    handlebar, saddle, pedals, wheel tires. Visual geoms carry mass; collision
+    primitives are ~2 mm larger radius for contact margin.
+  Mass budget (11.8): mainbar 1.4 downtube 1.3 seattube .8 chainstay .5 headtube .3
+    seatpost .3 saddle .6 chainring .3 | stem .4 handlebar .6 crown .2 blades .55x2
+    | wheels 2.0 x 2
+-->
+<mujoco model="g1_bicycle">
+  <compiler angle="radian" autolimits="true"/>
+  <option timestep="0.002" integrator="implicitfast"/>
+
+  <default>
+    <joint damping="0"/>
+    <default class="visual">
+      <geom contype="0" conaffinity="0" group="1" condim="1"/>
+    </default>
+    <default class="collision">
+      <geom contype="2" conaffinity="1" group="3" density="0" condim="3"
+            friction="1.0 0.005 0.001" solref="0.005 1" solimp="0.9 0.95 0.001"/>
+    </default>
+  </default>
+
+  <!-- offscreen framebuffer size: needed for recording above 640x480 -->
+  <visual>
+    <global offwidth="1280" offheight="720"/>
+    <quality shadowsize="4096"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.7 0.8 0.9" rgb2="1 1 1" width="256" height="256"/>
+    <texture name="grid" type="2d" builtin="checker" rgb1="0.8 0.8 0.8" rgb2="0.6 0.6 0.6" width="256" height="256"/>
+    <material name="grid" texture="grid" texrepeat="20 20" reflectance="0"/>
+    <material name="white" rgba="0.92 0.92 0.94 1"/>
+    <material name="tire"  rgba="0.12 0.12 0.12 1"/>
+    <material name="black" rgba="0.18 0.18 0.18 1"/>
+    <material name="dark"  rgba="0.35 0.35 0.38 1"/>
+    <material name="col_handle" rgba="1.0 0.25 0.25 0.55"/>
+    <material name="col_pedal"  rgba="0.25 1.0 0.25 0.55"/>
+    <material name="col_seat"   rgba="1.0 0.85 0.2 0.55"/>
+    <material name="col_wheel"  rgba="0.25 0.45 1.0 0.55"/>
+    <material name="col_frame"  rgba="0.85 0.85 0.9 0.45"/>
+    <material name="col_crank"  rgba="0.55 0.55 0.6 0.5"/>
+    <material name="col_fork"   rgba="0.45 0.45 0.5 0.5"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 5" dir="0 0 -1" diffuse="0.9 0.9 0.9"/>
+    <geom name="floor" type="plane" size="200 200 0.1" material="grid" contype="1" conaffinity="2"/>
+
+    <!-- ============ FRAME (rear axle at world (0,0,0.24)) ============ -->
+    <body name="frame" pos="0 0 0">
+      <freejoint name="root"/>
+      <!-- head tube sleeve, on the steer axis -->
+      <geom name="headtube"  class="visual" type="capsule" fromto="0.7565 0 0.550  0.7274 0 0.630" size="0.024" mass="0.3" material="white"/>
+      <geom name="headtube_col" class="collision" type="capsule"
+            fromto="0.7565 0 0.550  0.7274 0 0.630" size="0.026" material="col_frame"/>
+      <!-- main bar: ONE straight tube, rear axle -> head tube junction (on axis) -->
+      <geom name="mainbar"   class="visual" type="capsule" fromto="0 0 0.24  0.7474 0 0.575" size="0.015" mass="1.0" material="white"/>
+      <geom name="mainbar_col" class="collision" type="capsule"
+            fromto="0 0 0.24  0.7474 0 0.575" size="0.017" material="col_frame"/>
+      <!-- down tube: head tube junction (on axis) -> bottom bracket -->
+      <geom name="downtube"  class="visual" type="capsule" fromto="0.7511 0 0.565  0.391 0 0.241" size="0.018" mass="1.0" material="white"/>
+      <geom name="downtube_col" class="collision" type="capsule"
+            fromto="0.7511 0 0.565  0.391 0 0.241" size="0.020" material="col_frame"/>
+      <!-- seat tube: BB, crossing the main bar, up to the seatpost -->
+      <geom name="seattube"  class="visual" type="capsule" fromto="0.391 0 0.241  0.245 0 0.500" size="0.015" mass="0.6" material="white"/>
+      <geom name="seattube_col" class="collision" type="capsule"
+            fromto="0.391 0 0.241  0.245 0 0.500" size="0.017" material="col_frame"/>
+      <!-- chain stays: rear axle -> BB -->
+      <geom name="chainstay" class="visual" type="capsule" fromto="0 0 0.24  0.391 0 0.241" size="0.009" mass="0.5" material="white"/>
+      <geom name="chainstay_col" class="collision" type="capsule"
+            fromto="0 0 0.24  0.391 0 0.241" size="0.011" material="col_frame"/>
+      <!-- seatpost + saddle (saddle local z=0.570 = 57 cm) -->
+      <geom name="seatpost"  class="visual" type="capsule" fromto="0.245 0 0.500  0.2327 0 0.555" size="0.011" mass="0.3" material="dark"/>
+      <geom name="seatpost_col" class="collision" type="capsule"
+            fromto="0.245 0 0.500  0.2327 0 0.555" size="0.013" material="col_frame"/>
+      <!-- Saddle: 5 cylinders, axes parallel to the frame's X axis (quat rotates the
+           cylinder's default local-Z axis onto X), so each cylinder's flat cap faces
+           fore/aft -- the direction the bike is headed -- like a real saddle's
+           nose-to-tail lines. They sit side by side across Y (the width). All 5 share
+           the SAME rear edge (x=0.1127) and extend forward by different amounts --
+           longest down the centreline (forming the nose), shorter at the outer strips. -->
+      <geom name="saddle_1" class="visual" type="cylinder" pos="0.1627 -0.056 0.570" quat="0.7071068 0 0.7071068 0" size="0.014 0.050" mass="0.12" material="black"/>
+      <geom name="saddle_2" class="visual" type="cylinder" pos="0.1977 -0.028 0.570" quat="0.7071068 0 0.7071068 0" size="0.014 0.085" mass="0.12" material="black"/>
+      <geom name="saddle_3" class="visual" type="cylinder" pos="0.2327  0.000 0.570" quat="0.7071068 0 0.7071068 0" size="0.014 0.120" mass="0.12" material="black"/>
+      <geom name="saddle_4" class="visual" type="cylinder" pos="0.1977  0.028 0.570" quat="0.7071068 0 0.7071068 0" size="0.014 0.085" mass="0.12" material="black"/>
+      <geom name="saddle_5" class="visual" type="cylinder" pos="0.1627  0.056 0.570" quat="0.7071068 0 0.7071068 0" size="0.014 0.050" mass="0.12" material="black"/>
+      <geom name="saddle_1_col" class="collision" type="cylinder" pos="0.1627 -0.056 0.570" quat="0.7071068 0 0.7071068 0" size="0.016 0.050" material="col_seat"/>
+      <geom name="saddle_2_col" class="collision" type="cylinder" pos="0.1977 -0.028 0.570" quat="0.7071068 0 0.7071068 0" size="0.016 0.085" material="col_seat"/>
+      <geom name="saddle_3_col" class="collision" type="cylinder" pos="0.2327  0.000 0.570" quat="0.7071068 0 0.7071068 0" size="0.016 0.120" material="col_seat"/>
+      <geom name="saddle_4_col" class="collision" type="cylinder" pos="0.1977  0.028 0.570" quat="0.7071068 0 0.7071068 0" size="0.016 0.085" material="col_seat"/>
+      <geom name="saddle_5_col" class="collision" type="cylinder" pos="0.1627  0.056 0.570" quat="0.7071068 0 0.7071068 0" size="0.016 0.050" material="col_seat"/>
+      <site name="imu" pos="0.34 0 0.40" size="0.01"/>
+
+      <!-- ============ CRANK + PEDALS (bottom bracket at 0.391, 0, 0.241 - MOCAP-DERIVED) ============
+           MEASURED: crank arm 0.130 m, chainring radius 0.070 m,
+           pedal platform 8 x 10 x 3 cm, gear ratio 1.5 (1 crank rev = 1.5 wheel revs).
+           Lateral layout (MEASURED): chainring 1 cm right of the frame centreline (y=-0.010);
+           crank arm planes 2 cm outboard of the chainring (y=-+0.030).
+           +y is LEFT (x forward, z up, right-handed), so the chainring is on the RIGHT.
+           The right-side chainring offsets the CoM ~2 mm right; the bike then holds a
+           small steady lean. That is real, and matches a real bicycle. -->
+      <body name="crank" pos="0.391 0 0.241">
+        <joint name="crank_spin" type="hinge" axis="0 1 0" damping="0.01"/>
+        <!-- Crank tips at ±0.075. Pedal platforms (Y half=0.075 → 15 cm wide) grow
+             OUTBOARD only so geom centers sit at ±0.15 (30 cm apart).
+             Inner edge = crank tip; outer edge = ±0.225. -->
+        <geom name="bb_spindle" class="visual" type="capsule" fromto="0 -0.075 0  0 0.075 0" size="0.010" mass="0.2" material="dark"/>
+        <geom name="bb_spindle_col" class="collision" type="capsule"
+              fromto="0 -0.075 0  0 0.075 0" size="0.012" material="col_crank"/>
+        <!-- right arm points DOWN at rest, left arm UP: 180 deg apart -->
+        <geom name="crank_arm_r" class="visual" type="capsule" fromto="0 -0.075 0  0 -0.075 -0.130" size="0.008" mass="0.2" material="dark"/>
+        <geom name="crank_arm_r_col" class="collision" type="capsule"
+              fromto="0 -0.075 0  0 -0.075 -0.130" size="0.010" material="col_crank"/>
+        <geom name="crank_arm_l" class="visual" type="capsule" fromto="0  0.075 0  0  0.075  0.130" size="0.008" mass="0.2" material="dark"/>
+        <geom name="crank_arm_l_col" class="collision" type="capsule"
+              fromto="0  0.075 0  0  0.075  0.130" size="0.010" material="col_crank"/>
+        <!-- chainring: RIGHT side -->
+        <geom name="chainring" class="visual" type="cylinder" pos="0 -0.010 0" quat="0.7071068 0.7071068 0 0" size="0.070 0.003" mass="0.3" material="dark"/>
+        <geom name="chainring_col" class="collision" type="cylinder" pos="0 -0.010 0"
+              quat="0.7071068 0.7071068 0 0" size="0.072 0.004" material="col_crank"/>
+
+        <body name="pedal_right" pos="0 -0.075 -0.130">
+          <joint name="pedal_r_spin" type="hinge" axis="0 1 0" damping="0.02"/>
+          <geom name="pedal_r_vis" class="visual" type="box" pos="0 -0.075 0" size="0.04 0.075 0.015" mass="0.15" material="black"/>
+          <geom name="pedal_r" class="collision" type="box" pos="0 -0.075 0" size="0.04 0.075 0.015" material="col_pedal"/>
+        </body>
+        <body name="pedal_left" pos="0 0.075 0.130">
+          <joint name="pedal_l_spin" type="hinge" axis="0 1 0" damping="0.02"/>
+          <geom name="pedal_l_vis" class="visual" type="box" pos="0 0.075 0" size="0.04 0.075 0.015" mass="0.15" material="black"/>
+          <geom name="pedal_l" class="collision" type="box" pos="0 0.075 0" size="0.04 0.075 0.015" material="col_pedal"/>
+        </body>
+      </body>
+
+      <!-- ============ REAR WHEEL ============ -->
+      <body name="rear_wheel" pos="0 0 0.24">
+        <inertial pos="0 0 0" mass="2.0" diaginertia="0.058 0.115 0.058"/>
+        <joint name="rear_spin" type="hinge" axis="0 1 0"/>
+        <!-- collision: ellipsoid semi-axis 0.0775 -> crown radius b^2/a = 25 mm (real tyre crown) -->
+        <geom name="rear_tire_col" class="collision" type="ellipsoid" size="0.24 0.0775 0.24"
+              friction="1.5 0.01 0.002" material="col_wheel"/>
+        <!-- visual only: true 5 cm tyre width -->
+        <geom name="rear_tire" class="visual" type="cylinder" size="0.24 0.025" quat="0.7071068 0.7071068 0 0" material="tire"/>
+      </body>
+
+      <!-- ============ FORK + HANDLEBAR (origin on the steer axis at z=0.60) ============ -->
+      <body name="fork" pos="0.7383 0 0.60">
+        <joint name="steer" type="hinge" pos="0 0 0" axis="-0.34202 0 0.93969"
+               range="-1.0 1.0" damping="3.0" frictionloss="0.5"/>
+        <!-- steerer tube: COLLINEAR with the steer axis (continues the head tube) -->
+        <geom name="steerer" class="visual" type="capsule" fromto="0 0 0  -0.0728 0 0.20" size="0.014" mass="0.3" material="black"/>
+        <geom name="steerer_col" class="collision" type="capsule"
+              fromto="0 0 0  -0.0728 0 0.20" size="0.016" material="col_fork"/>
+        <!-- stem: 3.9 cm forward from the steerer top to the bar clamp (as on the real bike) -->
+        <geom name="stem" class="visual" type="capsule" fromto="-0.0728 0 0.20  -0.0337 0 0.20" size="0.013" mass="0.1" material="black"/>
+        <geom name="stem_col" class="collision" type="capsule"
+              fromto="-0.0728 0 0.20  -0.0337 0 0.20" size="0.015" material="col_fork"/>
+        <geom name="handlebar" class="visual" type="capsule" fromto="-0.0337 -0.285 0.20  -0.0337 0.285 0.20" size="0.011" mass="0.6" material="black"/>
+        <!-- Left=0 cm at Y=+0.285, right=57 cm at Y=-0.285. Thin rewarded grab
+             surfaces: 0–42 cm and 48–57 cm. 42–48 cm is 2× diameter and is
+             not matched by handle contact sensors. -->
+        <geom name="handlebar_col_left" class="collision" type="capsule"
+              fromto="-0.0337 0.285 0.20  -0.0337 -0.135 0.20" size="0.013"
+              friction="1.5 0.005 0.001" material="col_handle"/>
+        <geom name="handlebar_col_right" class="collision" type="capsule"
+              fromto="-0.0337 -0.195 0.20  -0.0337 -0.285 0.20" size="0.013"
+              friction="1.5 0.005 0.001" material="col_handle"/>
+        <geom name="handlebar_thick_vis" class="visual" type="cylinder"
+              fromto="-0.0337 -0.135 0.20  -0.0337 -0.195 0.20" size="0.022" mass="0.05" material="black"/>
+        <geom name="handlebar_thick_col" class="collision" type="cylinder"
+              fromto="-0.0337 -0.135 0.20  -0.0337 -0.195 0.20" size="0.026"
+              friction="1.5 0.005 0.001" material="col_handle"/>
+        <!-- fork crown just below the head tube (local, on axis) -->
+        <geom name="crown" class="visual" type="capsule" fromto="0.018 -0.055 -0.050  0.018 0.055 -0.050" size="0.014" mass="0.2" material="black"/>
+        <geom name="crown_col" class="collision" type="capsule"
+              fromto="0.018 -0.055 -0.050  0.018 0.055 -0.050" size="0.016" material="col_fork"/>
+        <!-- twin blades: crown -> front axle, local (0.1417, 0, -0.36) -->
+        <geom name="blade_l" class="visual" type="capsule" fromto="0.018 -0.055 -0.050  0.1417 -0.055 -0.360" size="0.013" mass="0.55" material="black"/>
+        <geom name="blade_l_col" class="collision" type="capsule"
+              fromto="0.018 -0.055 -0.050  0.1417 -0.055 -0.360" size="0.015" material="col_fork"/>
+        <geom name="blade_r" class="visual" type="capsule" fromto="0.018  0.055 -0.050  0.1417  0.055 -0.360" size="0.013" mass="0.55" material="black"/>
+        <geom name="blade_r_col" class="collision" type="capsule"
+              fromto="0.018  0.055 -0.050  0.1417  0.055 -0.360" size="0.015" material="col_fork"/>
+
+        <!-- ============ FRONT WHEEL ============ -->
+        <body name="front_wheel" pos="0.1417 0 -0.36">
+          <inertial pos="0 0 0" mass="2.0" diaginertia="0.058 0.115 0.058"/>
+          <joint name="front_spin" type="hinge" axis="0 1 0"/>
+          <!-- collision: ellipsoid semi-axis 0.0775 -> crown radius b^2/a = 25 mm (real tyre crown) -->
+          <geom name="front_tire_col" class="collision" type="ellipsoid" size="0.24 0.0775 0.24"
+                friction="1.5 0.01 0.002" material="col_wheel"/>
+          <!-- visual only: true 5 cm tyre width -->
+          <geom name="front_tire" class="visual" type="cylinder" size="0.24 0.025" quat="0.7071068 0.7071068 0 0" material="tire"/>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <!-- Drivetrain: XML default is FIXED-GEAR equality (rear = 1.5 * crank).
+       Dynamic RL bikes delete this equality and use a one-way freewheel clutch
+       in code (see bicycle_freewheel.py): drive forward engages; coast/backpedal frees.
+       G was 2.2; set to 1.5 to match bike_052 mocap running-max ratchet (2026-08-09). -->
+  <equality>
+    <joint joint1="rear_spin" joint2="crank_spin" polycoef="0 1.5 0 0 0"/>
+  </equality>
+
+  <actuator>
+    <!-- PEDALING: torque is applied to the CRANK, not the wheel. The equality
+         constraint then spins the rear wheel at 1.5x the crank rate.
+         ctrl = crank rad/s;  forward speed = ctrl * G * r = ctrl * 1.5 * 0.24.
+         forcerange scales with G: the crank turns slower than the wheel, so it must
+         carry proportionally MORE torque for the same wheel torque (power conserved).
+         This is the stand-in the G1's legs will replace. -->
+    <velocity name="drive" joint="crank_spin" kv="18" ctrlrange="0 20" forcerange="-80 80"/>
+    <!-- Alternative for RL / leg-driven pedalling: raw torque on the crank.
+    <motor name="pedal_torque" joint="crank_spin" ctrlrange="-80 80"/> -->
+    <motor name="steer_torque" joint="steer" ctrlrange="-5 5"/>
+  </actuator>
+
+  <sensor>
+    <framequat name="frame_quat" objtype="body" objname="frame"/>
+    <gyro name="frame_gyro" site="imu"/>
+  </sensor>
+</mujoco>

@@ -1,0 +1,9 @@
+<mujoco model="g1_bicycle_combined">
+  <compiler angle="radian" meshdir="unitree_g1/meshes"/>
+  <option timestep="0.002" integrator="implicitfast"/>
+  <visual>
+    <global offwidth="1280" offheight="720"/>
+  </visual>
+  <include file="bicycle/g1_bicycle.xml"/>
+  <include file="unitree_g1/g1_mocap_29dof_collision.xml"/>
+</mujoco>

@@ -1,0 +1,17 @@
+outputs/*
+!outputs/.gitkeep
+repos/*/data/pretrain/
+repos/*/data/body_models/
+repos/GMR/assets/body_models/smplx/*.npz
+repos/unitree_rl_mjlab/logs/
+wandb/
+*.pt
+*.onnx
+*.mp4
+!sample_data/**/*.mp4
+*.mcs
+*.glb
+*.log
+__pycache__/
+*.py[cod]
+.DS_Store
